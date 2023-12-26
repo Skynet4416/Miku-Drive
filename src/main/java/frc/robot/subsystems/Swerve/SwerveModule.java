@@ -57,8 +57,8 @@ public class SwerveModule extends SubsystemBase {
         this.m_velocityDutyCycle = new VelocityDutyCycle(0);
         this.m_motionMagicDutyCycle = new MotionMagicDutyCycle(0);
         
-        this.m_voltageVelocity = new VelocityVoltage(0,0,false,0,0,false);
-        this.m_voltagePosition = new PositionVoltage(0,0,false,0,0,false);
+        this.m_voltageVelocity = new VelocityVoltage(0);
+        this.m_voltagePosition = new PositionVoltage(0);
         this.m_moduleState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
 
         this.m_moduleOffset = moduleOffsetInDegrees;
