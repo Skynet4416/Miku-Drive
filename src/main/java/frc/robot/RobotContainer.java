@@ -31,7 +31,6 @@ public class RobotContainer {
     this.m_driveSubsystem = new DriveSubsystem();
     this.oi = new OI();
     configureBindings();
-    m_driveSubsystem.setAllModulesToZero();
   }
 
   /**

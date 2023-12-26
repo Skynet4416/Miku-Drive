@@ -1,4 +1,4 @@
-package frc.robot.subsystems.Swerve;
+package frc.robot.subsystems.Drive;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -32,8 +32,6 @@ public class SwerveModule extends SubsystemBase {
     private final VelocityVoltage m_voltageVelocity;
     private final PositionVoltage m_voltagePosition;
 
-    private final VelocityDutyCycle m_velocityDutyCycle;
-    private final MotionMagicDutyCycle m_motionMagicDutyCycle;
 
     private SwerveModuleState m_moduleState; // current state of the module without steer offset
     private double m_moduleOffset;
@@ -53,14 +51,9 @@ public class SwerveModule extends SubsystemBase {
         this.m_driveMotor = new TalonFX(driveMotorCANID);
         this.m_steerMotor = new TalonFX(steerMotorCANID);
         this.m_steerEncoder = new CANcoder(steerEncoderCANID);
-        
-        this.m_velocityDutyCycle = new VelocityDutyCycle(0);
-        this.m_motionMagicDutyCycle = new MotionMagicDutyCycle(0);
-        
         this.m_voltageVelocity = new VelocityVoltage(0);
         this.m_voltagePosition = new PositionVoltage(0);
         this.m_moduleState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
-
         this.m_moduleOffset = moduleOffsetInDegrees;
         configMotors(steerEncoderCANID);
         setNeutralMode(NeutralModeValue.Brake);
@@ -72,22 +65,18 @@ public class SwerveModule extends SubsystemBase {
      * The CANID of the encoder that will replace the included encoder inside the Falcon 500
      */
     private void configMotors(int steerEncoderCANID) {
-
         VoltageConfigs voltageConfigs = new VoltageConfigs()
             .withPeakForwardVoltage(Swerve.Stats.kMaxVoltage)
             .withPeakReverseVoltage(-Swerve.Stats.kMaxVoltage);
-
         CurrentLimitsConfigs statorConfigs = new CurrentLimitsConfigs()
             .withStatorCurrentLimitEnable(true)
             .withSupplyCurrentLimitEnable(true)
             .withStatorCurrentLimit(35)
             .withSupplyCurrentLimit(35);
-
         FeedbackConfigs feedbackConfigs = new FeedbackConfigs()
             .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
             .withFeedbackRemoteSensorID(steerEncoderCANID)
             .withRotorToSensorRatio(Swerve.Stats.kRotorToSensorRatio);
-
         Slot0Configs slot0DriveConfigs = new Slot0Configs()
             .withKA(Swerve.PID.Drive.kA) // Acceleration 
             .withKS(Swerve.PID.Drive.kS) // Static Friction Offset
@@ -96,9 +85,6 @@ public class SwerveModule extends SubsystemBase {
             .withKP(Swerve.PID.Drive.kP)  // Proportional tuning - error
             .withKI(Swerve.PID.Drive.kI) // Integral tuning - learning
             .withKD(Swerve.PID.Drive.kD); // Derivative tuning - overshoot
-
-
-
         Slot0Configs slot0SteerConfigs = new Slot0Configs()
             .withKA(Swerve.PID.Steer.kA) // Acceleration 
             .withKS(Swerve.PID.Steer.kS) // Static Friction Offset

@@ -13,7 +13,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.Drive;
-import frc.robot.subsystems.Swerve.SwerveModule;
 
 
 public class DriveSubsystem extends SubsystemBase {
@@ -78,6 +77,7 @@ public class DriveSubsystem extends SubsystemBase {
     m_swerveSpeeds = new ChassisSpeeds(0, 0, 0);
 
     m_currentPose = m_odometry.getPoseMeters(); // TODO needs to take the position from vision 
+    setAllModulesToZero();
   }
 /**
  * Sets the state of all of the swerve modules
@@ -107,14 +107,6 @@ public class DriveSubsystem extends SubsystemBase {
     this.m_swerveSpeeds = new ChassisSpeeds(-xVelocityMps, -yVelocityMps, -rotationVelocityRps);
     SwerveModuleState[] target_states = Drive.Stats.kinematics.toSwerveModuleStates(this.m_swerveSpeeds);
     setModulesStates(target_states);
-  }
-
-  public void print(){
-    // System.out.println("\n");
-    // System.out.println("FL MOTOR ANGLE " + this.m_frontLeftModule.getSteerEncoder().getAbsolutePosition().getValueAsDouble() / 360 + " degrees");
-    // System.out.println("FR MOTOR ANGLE " + this.m_frontRightModule.getSteerEncoder().getAbsolutePosition().getValueAsDouble() / 360 + " degrees");
-    // System.out.println("BR MOTOR ANGLE " + this.m_backRightModule.getSteerEncoder().getAbsolutePosition().getValueAsDouble()/ 360 + " degrees");
-    // System.out.println("BL MOTOR ANGLE " + this.m_backLeftModule.getSteerEncoder().getAbsolutePosition().getValueAsDouble() / 360 + " degrees");
   }
 
   public void resetOdometry() {
@@ -152,11 +144,7 @@ public class DriveSubsystem extends SubsystemBase {
       new SwerveModulePosition(m_backRightModule.getVelocityMetersPerSecond(), m_backRightModule.getSteerAngle())
     });
     SwerveModuleState[] states = Drive.Stats.kinematics.toSwerveModuleStates(m_swerveSpeeds);
-
-    m_frontLeftModule.setModuleState(states[0]);
-    m_frontRightModule.setModuleState(states[1]);
-    m_backLeftModule.setModuleState(states[2]);
-    m_backRightModule.setModuleState(states[3]);
+    setModulesStates(states);
 
   }
 
