@@ -139,8 +139,23 @@ public class SwerveModule extends SubsystemBase {
      */
     public void setModuleState(SwerveModuleState state){
         //state = SwerveModuleState.optimize(state, this.m_moduleState.angle); // CURRENTLY BREAKS THINGS
-        this.m_driveMotor.setControl(m_voltageVelocity.withVelocity(mpsToRps(state.speedMetersPerSecond)));
-        this.m_steerMotor.setControl(this.m_voltagePosition.withPosition((this.m_moduleOffset + state.angle.getDegrees())/360));
+        this.m_driveMotor.setControl(this.m_voltageVelocity.withVelocity(mpsToRps(state.speedMetersPerSecond)));
+        this.m_steerMotor.setControl(this.m_voltagePosition.withPosition(calculateCorrectPositionInRotations(state.angle.getDegrees())));
+    }
+
+    /**
+     * Calculates the shortest path to a degree
+     * @param degrees
+     * Double of the wanted degrees
+     * @return
+     * The position that the steer motor needs to be in
+     */
+    public double calculateCorrectPositionInRotations(double degrees) {
+        degrees = degrees + this.m_moduleOffset;
+        degrees = 
+            (Math.abs(degrees - getSteerAngle().getDegrees()) > Math.abs(Math.abs(360 - degrees) - getSteerAngle().getDegrees())) ? 360 + degrees 
+            : degrees;
+        return degrees/360;
     }
 
     /**
