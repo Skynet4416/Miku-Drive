@@ -19,12 +19,11 @@ import frc.robot.Constants.Swerve.PID;
  * project.
  */
 public class Robot extends TimedRobot {
-  private Command m_autonomousCommand;
+  private Command mAutonomousCommand;
 
-  private RobotContainer m_robotContainer;
-  private ShuffleboardTab mainTab;
-  private ShuffleboardTab drivePIDTab;
-  private ShuffleboardTab steerPIDTab;
+  private RobotContainer mRobotContainer;
+  private ShuffleboardTab mDrivePIDTab;
+  private ShuffleboardTab mSteerPIDTab;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -34,34 +33,33 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // Instantiate our RobotContainer. This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
-    m_robotContainer = new RobotContainer();
+    mRobotContainer = new RobotContainer();
 
     // Shuffleboard setup
-    mainTab = Shuffleboard.getTab("PID tab");
-    drivePIDTab = Shuffleboard.getTab("Drive PID");
-    steerPIDTab = Shuffleboard.getTab("Steer PID");
+    mDrivePIDTab = Shuffleboard.getTab("Drive PID");
+    mSteerPIDTab = Shuffleboard.getTab("Steer PID");
 
     // Add PID constants to Shuffleboard
-    addPIDConstantsToShuffleboardDrive(drivePIDTab, "Drive");
-    addPIDConstantsToShuffleboardSteer(steerPIDTab, "Steer");
+    addPIDConstantsToShuffleboardDrive(mDrivePIDTab, "Drive");
+    addPIDConstantsToShuffleboardSteer(mSteerPIDTab, "Steer");
   }
 
   private void addPIDConstantsToShuffleboardDrive(ShuffleboardTab tab, String name) {
-    tab.add(name + " kS", PID.Drive.kS);
-    tab.add(name + " kV", PID.Drive.kV);
-    tab.add(name + " kA", PID.Drive.kA);
-    tab.add(name + " kP", PID.Drive.kP);
-    tab.add(name + " kI", PID.Drive.kI);
-    tab.add(name + " kD", PID.Drive.kD);
+    tab.add(name + " S", PID.Drive.S);
+    tab.add(name + " V", PID.Drive.V);
+    tab.add(name + " A", PID.Drive.A);
+    tab.add(name + " P", PID.Drive.P);
+    tab.add(name + " I", PID.Drive.I);
+    tab.add(name + " D", PID.Drive.D);
   }
 
   private void addPIDConstantsToShuffleboardSteer(ShuffleboardTab tab, String name) {
-    tab.add(name + " kS", PID.Steer.kS);
-    tab.add(name + " kV", PID.Steer.kV);
-    tab.add(name + " kA", PID.Steer.kA);
-    tab.add(name + " kP", PID.Steer.kP);
-    tab.add(name + " kI", PID.Steer.kI);
-    tab.add(name + " kD", PID.Steer.kD);
+    tab.add(name + " S", PID.Steer.S);
+    tab.add(name + " V", PID.Steer.V);
+    tab.add(name + " A", PID.Steer.A);
+    tab.add(name + " P", PID.Steer.P);
+    tab.add(name + " I", PID.Steer.I);
+    tab.add(name + " D", PID.Steer.D);
   }
 
 
@@ -94,10 +92,10 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-      m_robotContainer.getClass();
+      mRobotContainer.getClass();
     // schedule the autonomous command (example)
-    // if (m_autonomousCommand != null) {
-    //   m_autonomousCommand.schedule();
+    // if (mAutonomousCommand != null) {
+    //   mAutonomousCommand.schedule();
     // }
   }
 
@@ -111,8 +109,8 @@ public class Robot extends TimedRobot {
     // teleop starts running. If you want the autonomous to
     // continue until interrupted by another command, remove
     // this line or comment it out.
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
+    if (mAutonomousCommand != null) {
+      mAutonomousCommand.cancel();
     }
   }
 

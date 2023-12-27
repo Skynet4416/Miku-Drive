@@ -1,13 +1,10 @@
 package frc.robot.subsystems.Drive;
 
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
-import com.ctre.phoenix6.controls.MotionMagicDutyCycle;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -18,7 +15,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.Swerve;
-import edu.wpi.first.wpilibj.shuffleboard.*;
 
 
 
@@ -26,15 +22,15 @@ public class SwerveModule extends SubsystemBase {
     // TODO https://pro.docs.ctr-electronics.com/en/latest/docs/migration/migration-guide/closed-loop-guide.html
     // TODO https://docs.wpilib.org/en/stable/docs/software/advanced-controls/controllers/trapezoidal-profiles.html
 
-    private final TalonFX m_driveMotor;
-    private final TalonFX m_steerMotor;
-    private final CANcoder m_steerEncoder;
-    private final VelocityVoltage m_voltageVelocity;
-    private final PositionVoltage m_voltagePosition;
+    private final TalonFX mDriveMotor;
+    private final TalonFX mSteerMotor;
+    private final CANcoder mSteerEncoder;
+    private final VelocityVoltage mVoltageVelocity;
+    private final PositionVoltage mVoltagePosition;
 
 
-    private SwerveModuleState m_moduleState; // current state of the module without steer offset
-    private double m_moduleOffset;
+    private SwerveModuleState mModuleState; // current state of the module without steer offset
+    private double mModuleOffset;
 
 
     /**
@@ -44,17 +40,17 @@ public class SwerveModule extends SubsystemBase {
      * CANID of the Steer Motor (The Falcon motor that controls turning)
      * @param steerEncoderCANID
      * CANID of the Steer Encoder (on-axis)
-     * @param moduleOffsetInDegrees
+     * @param moduleOffsetDegrees
      * The Offset of the module (Relative to the robot)
      */
-    public SwerveModule(int driveMotorCANID, int steerMotorCANID, int steerEncoderCANID, double moduleOffsetInDegrees) {
-        this.m_driveMotor = new TalonFX(driveMotorCANID);
-        this.m_steerMotor = new TalonFX(steerMotorCANID);
-        this.m_steerEncoder = new CANcoder(steerEncoderCANID);
-        this.m_voltageVelocity = new VelocityVoltage(0);
-        this.m_voltagePosition = new PositionVoltage(0);
-        this.m_moduleState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
-        this.m_moduleOffset = moduleOffsetInDegrees;
+    public SwerveModule(int driveMotorCANID, int steerMotorCANID, int steerEncoderCANID, double moduleOffsetDegrees) {
+        this.mDriveMotor = new TalonFX(driveMotorCANID);
+        this.mSteerMotor = new TalonFX(steerMotorCANID);
+        this.mSteerEncoder = new CANcoder(steerEncoderCANID);
+        this.mVoltageVelocity = new VelocityVoltage(0);
+        this.mVoltagePosition = new PositionVoltage(0);
+        this.mModuleState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
+        this.mModuleOffset = moduleOffsetDegrees;
         configMotors(steerEncoderCANID);
         setNeutralMode(NeutralModeValue.Brake);
     }
@@ -66,57 +62,48 @@ public class SwerveModule extends SubsystemBase {
      */
     private void configMotors(int steerEncoderCANID) {
         VoltageConfigs voltageConfigs = new VoltageConfigs()
-            .withPeakForwardVoltage(Swerve.Stats.kMaxVoltage)
-            .withPeakReverseVoltage(-Swerve.Stats.kMaxVoltage);
+            .withPeakForwardVoltage(Swerve.Stats.MAX_VOLTAGE)
+            .withPeakReverseVoltage(-Swerve.Stats.MAX_VOLTAGE);
         CurrentLimitsConfigs statorConfigs = new CurrentLimitsConfigs()
             .withStatorCurrentLimitEnable(true)
             .withSupplyCurrentLimitEnable(true)
-            .withStatorCurrentLimit(35)
-            .withSupplyCurrentLimit(35);
+            .withStatorCurrentLimit(Swerve.Stats.STATOR_CURRENT_LIMIT)
+            .withSupplyCurrentLimit(Swerve.Stats.SUPPLY_CURRENT_LIMIT);
         FeedbackConfigs feedbackConfigs = new FeedbackConfigs()
             .withFeedbackSensorSource(FeedbackSensorSourceValue.RemoteCANcoder)
             .withFeedbackRemoteSensorID(steerEncoderCANID)
-            .withRotorToSensorRatio(Swerve.Stats.kRotorToSensorRatio);
+            .withRotorToSensorRatio(Swerve.Stats.ROTOR_TO_SENSOR_RATIO);
         Slot0Configs slot0DriveConfigs = new Slot0Configs()
-            .withKA(Swerve.PID.Drive.kA) // Acceleration 
-            .withKS(Swerve.PID.Drive.kS) // Static Friction Offset
-            .withKV(Swerve.PID.Drive.kV) // Velocity Feedforward
+            .withKA(Swerve.PID.Drive.A) // Acceleration 
+            .withKS(Swerve.PID.Drive.S) // Static Friction Offset
+            .withKV(Swerve.PID.Drive.V) // Velocity Feedforward
             // P I D
-            .withKP(Swerve.PID.Drive.kP)  // Proportional tuning - error
-            .withKI(Swerve.PID.Drive.kI) // Integral tuning - learning
-            .withKD(Swerve.PID.Drive.kD); // Derivative tuning - overshoot
+            .withKP(Swerve.PID.Drive.P)  // Proportional tuning - error
+            .withKI(Swerve.PID.Drive.I) // Integral tuning - learning
+            .withKD(Swerve.PID.Drive.D); // Derivative tuning - overshoot
         Slot0Configs slot0SteerConfigs = new Slot0Configs()
-            .withKA(Swerve.PID.Steer.kA) // Acceleration 
-            .withKS(Swerve.PID.Steer.kS) // Static Friction Offset
-            .withKV(Swerve.PID.Steer.kV) // Velocity Feedforward
+            .withKA(Swerve.PID.Steer.A) // Acceleration 
+            .withKS(Swerve.PID.Steer.S) // Static Friction Offset
+            .withKV(Swerve.PID.Steer.V) // Velocity Feedforward
             // P I D
-            .withKP(Swerve.PID.Steer.kP)  // Proportional tuning - error
-            .withKI(Swerve.PID.Steer.kI) // Integral tuning - learning
-            .withKD(Swerve.PID.Steer.kD); // Derivative tuning - overshoot
+            .withKP(Swerve.PID.Steer.P)  // Proportional tuning - error
+            .withKI(Swerve.PID.Steer.I) // Integral tuning - learning
+            .withKD(Swerve.PID.Steer.D); // Derivative tuning - overshoot
         
 
 
-        this.m_driveMotor.getConfigurator().apply(voltageConfigs);
-        this.m_driveMotor.getConfigurator().apply(statorConfigs);
-        this.m_driveMotor.getConfigurator().apply(slot0DriveConfigs);
+        this.mDriveMotor.getConfigurator().apply(voltageConfigs);
+        this.mDriveMotor.getConfigurator().apply(statorConfigs);
+        this.mDriveMotor.getConfigurator().apply(slot0DriveConfigs);
         
         
-        this.m_steerMotor.getConfigurator().apply(voltageConfigs);
-        this.m_steerMotor.getConfigurator().apply(statorConfigs);
-        this.m_steerMotor.getConfigurator().apply(feedbackConfigs);
-        this.m_steerMotor.getConfigurator().apply(slot0SteerConfigs);
+        this.mSteerMotor.getConfigurator().apply(voltageConfigs);
+        this.mSteerMotor.getConfigurator().apply(statorConfigs);
+        this.mSteerMotor.getConfigurator().apply(feedbackConfigs);
+        this.mSteerMotor.getConfigurator().apply(slot0SteerConfigs);
         
 
         
-    }
-
-
-    /**
-     * @param degrees 
-     * The target angle in degrees of the module
-     */
-    public void setModuleAngle(double degrees){
-        this.m_steerMotor.setControl(this.m_voltagePosition.withPosition((this.m_moduleOffset - Math.min(180,Math.max(degrees,-180)))/360));
     }
 
     /**
@@ -124,9 +111,9 @@ public class SwerveModule extends SubsystemBase {
      * The state of the Module (Affects both the Drive and Steer Motor)
      */
     public void setModuleState(SwerveModuleState state){
-        //state = SwerveModuleState.optimize(state, this.m_moduleState.angle); // CURRENTLY BREAKS THINGS
-        this.m_driveMotor.setControl(this.m_voltageVelocity.withVelocity(mpsToRps(state.speedMetersPerSecond)));
-        this.m_steerMotor.setControl(this.m_voltagePosition.withPosition(calculateCorrectPositionInRotations(state.angle.getDegrees())));
+        //state = SwerveModuleState.optimize(state, this.mModuleState.angle); // CURRENTLY BREAKS THINGS
+        this.mDriveMotor.setControl(this.mVoltageVelocity.withVelocity(mpsToRps(state.speedMetersPerSecond)));
+        this.mSteerMotor.setControl(this.mVoltagePosition.withPosition(calculateCorrectPositionInRotations(state.angle.getDegrees())));
     }
 
     /**
@@ -137,7 +124,7 @@ public class SwerveModule extends SubsystemBase {
      * The position that the steer motor needs to be in
      */
     public double calculateCorrectPositionInRotations(double degrees) {
-        degrees = degrees + this.m_moduleOffset;
+        degrees = degrees + this.mModuleOffset;
         degrees = 
             (Math.abs(degrees - getSteerAngle().getDegrees()) > Math.abs(Math.abs(360 - degrees) - getSteerAngle().getDegrees())) ? 360 + degrees 
             : degrees;
@@ -150,7 +137,7 @@ public class SwerveModule extends SubsystemBase {
      * Rounds per minute
      */
     public double rpmToMps(double rpmValue) { 
-        return (60/(2*Math.PI*Swerve.Stats.wheelRadiusMeters))*rpmValue;
+        return (60/(2*Math.PI*Swerve.Stats.DRIVE_WHEEL_RADIUS_METERS))*rpmValue;
     }   
 
     /**
@@ -159,7 +146,7 @@ public class SwerveModule extends SubsystemBase {
      * Meters per second
      */
     public double mpsToRpm(double mpsValue) {
-        return (mpsValue / (2 * Math.PI * Swerve.Stats.wheelRadiusMeters)) * 60;
+        return (mpsValue / (2 * Math.PI * Swerve.Stats.DRIVE_WHEEL_RADIUS_METERS)) * 60;
     }
 
     /**
@@ -168,7 +155,7 @@ public class SwerveModule extends SubsystemBase {
      * Meters per second
      */
     public double mpsToRps(double mpsValue) {
-        return (mpsValue / (2 * Math.PI * Swerve.Stats.wheelRadiusMeters));
+        return (mpsValue / (2 * Math.PI * Swerve.Stats.DRIVE_WHEEL_RADIUS_METERS));
     }
 
     /**
@@ -179,12 +166,12 @@ public class SwerveModule extends SubsystemBase {
      *  
      */
     public void setNeutralMode(NeutralModeValue neutralMode) {
-        this.m_driveMotor.setNeutralMode(neutralMode);
-        this.m_steerMotor.setNeutralMode(neutralMode);
+        this.mDriveMotor.setNeutralMode(neutralMode);
+        this.mSteerMotor.setNeutralMode(neutralMode);
     }
     
     public Rotation2d getSteerAngle() {
-        return this.m_moduleState.angle;
+        return new Rotation2d(this.mModuleOffset + this.mModuleState.angle.getDegrees());
     } 
 
     public void setCoast(){
@@ -196,23 +183,23 @@ public class SwerveModule extends SubsystemBase {
     }
 
     public TalonFX getDriveMotor() {
-        return this.m_driveMotor;
+        return this.mDriveMotor;
     }
 
     public TalonFX getSteerMotor() {
-        return this.m_steerMotor;
+        return this.mSteerMotor;
     }
 
     public CANcoder getSteerEncoder() {
-        return this.m_steerEncoder;
+        return this.mSteerEncoder;
     }
 
     public double getVelocityMetersPerSecond() {
-        return this.m_moduleState.speedMetersPerSecond;
+        return this.mModuleState.speedMetersPerSecond;
     }
 
     public SwerveModuleState getModuleState() {
-        return this.m_moduleState;
+        return this.mModuleState;
     }
 
 
@@ -222,7 +209,7 @@ public class SwerveModule extends SubsystemBase {
      */
     public void setDriveMotor(double speed) {
         
-        this.m_driveMotor.set(speed);
+        this.mDriveMotor.set(speed);
     }
 
 
@@ -231,13 +218,13 @@ public class SwerveModule extends SubsystemBase {
      * @param speed The speed to set (Percentage). Value should be between -1.0 and 1.0.
      */
     public void setSteerMotor(double speed) {
-        this.m_steerMotor.set(speed);
+        this.mSteerMotor.set(speed);
     }
 
     @Override
     public void periodic() { // todo logs needed - ShuffleBoard
-        this.m_moduleState.angle = Rotation2d.fromDegrees(this.m_steerEncoder.getAbsolutePosition().getValueAsDouble() / 360);
-        this.m_moduleState.speedMetersPerSecond = rpmToMps(this.m_driveMotor.getRotorVelocity().getValueAsDouble() * 60);
+        this.mModuleState.angle = Rotation2d.fromDegrees(this.mSteerEncoder.getAbsolutePosition().getValueAsDouble() / 360);
+        this.mModuleState.speedMetersPerSecond = rpmToMps(this.mDriveMotor.getRotorVelocity().getValueAsDouble() * 60);
     }
 
     @Override

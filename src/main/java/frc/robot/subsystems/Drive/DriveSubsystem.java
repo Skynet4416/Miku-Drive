@@ -11,147 +11,163 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.Drive;
 
 
 public class DriveSubsystem extends SubsystemBase {
-  // TODO https://github.com/CrossTheRoadElec/Phoenix6-Examples/tree/main/java/SwerveWithPathPlanner
-  // TODO https://github.com/CrossTheRoadElec/SwerveDriveExample/blob/main/src/main/java/frc/robot/CTRSwerve/CTRSwerveModule.java
-  private final SwerveModule m_frontLeftModule;
-  private final SwerveModule m_frontRightModule;
-  private final SwerveModule m_backLeftModule;
-  private final SwerveModule m_backRightModule;
-  private final AHRS m_navX;
-  private final SwerveModulePosition[] m_modulePositions;
-  private final SwerveDriveOdometry m_odometry;
-  private ChassisSpeeds m_swerveSpeeds;
-  private Pose2d m_currentPose;
+    // TODO https://github.com/CrossTheRoadElec/Phoenix6-Examples/tree/main/java/SwerveWithPathPlanner
+    // TODO https://github.com/CrossTheRoadElec/SwerveDriveExample/blob/main/src/main/java/frc/robot/CTRSwerve/CTRSwerveModule.java
+    private final SwerveModule mFrontLeftModule;
+    private final SwerveModule mFrontRightModule;
+    private final SwerveModule mBackLeftModule;
+    private final SwerveModule mBackRightModule;
+    private final ShuffleboardTab mSwerveModulesTab;
+    private final AHRS mNavX;
+    private final SwerveModulePosition[] mModulePositions;
+    private final SwerveDriveOdometry mOdometry;
+    private ChassisSpeeds mSwerveSpeeds;
+    private Pose2d mCurrentPose;
 
 
 
 
-  public DriveSubsystem() {
-    this.m_frontLeftModule = new SwerveModule(
-      Drive.Motors.kFrontLeftDriveFalconCANID, 
-      Drive.Motors.kFrontLeftSteerFalconCANID, 
-      Drive.Encoders.kFrontLeftSteerEncoderCANID, 
-      Drive.Stats.kFrontLeftModuleOffsetInDegrees
-    );
-    this.m_frontRightModule = new SwerveModule(
-      Drive.Motors.kFrontRightDriveFalconCANID, 
-      Drive.Motors.kFrontRightSteerFalconCANID, 
-      Drive.Encoders.kFrontRightSteerEncoderCANID,
-      Drive.Stats.kFrontRightModuleOffsetInDegrees
-      );
-    this.m_backLeftModule = new SwerveModule(
-      Drive.Motors.kBackLeftDriveFalconCANID, 
-      Drive.Motors.kBackLeftSteerFalconCANID, 
-      Drive.Encoders.kBackLeftSteerEncoderCANID,
-      Drive.Stats.kBackLeftModuleOffsetInDegrees
-    );
-    this.m_backRightModule = new SwerveModule(
-      Drive.Motors.kBackRightDriveFalconCANID, 
-      Drive.Motors.kBackRightSteerFalconCANID, 
-      Drive.Encoders.kBackRightSteerEncoderCANID,
-      Drive.Stats.kBackRightModuleOffsetInDegrees
-    );
+    public DriveSubsystem() {
+        this.mFrontLeftModule = new SwerveModule(
+        Drive.Motors.FRONT_LEFT_DRIVE_FALCON_CANID, 
+        Drive.Motors.FRONT_LEFT_STEER_FALCON_CANID, 
+        Drive.Encoders.FRONT_LEFT_STEER_ENCODER_CANID, 
+        Drive.Stats.FRONT_LEFT_MODULE_OFFSET_DEGREES
+        );
+        this.mFrontRightModule = new SwerveModule(
+        Drive.Motors.FRONT_RIGHT_DRIVE_FALCON_CANID, 
+        Drive.Motors.FRONT_RIGHT_STEER_FALCON_CANID, 
+        Drive.Encoders.FRONT_RIGHT_STEER_ENCODER_CANID,
+        Drive.Stats.FRONT_RIGHT_MODULE_OFFSET_DEGREES
+        );
+        this.mBackLeftModule = new SwerveModule(
+        Drive.Motors.BACK_LEFT_DRIVE_FALCON_CANID, 
+        Drive.Motors.BACK_LEFT_STEER_FALCON_CANID, 
+        Drive.Encoders.BACK_LEFT_STEER_ENCODER_CANID,
+        Drive.Stats.BACK_LEFT_MODULE_OFFSET_DEGREES
+        );
+        this.mBackRightModule = new SwerveModule(
+        Drive.Motors.BACK_RIGHT_DRIVE_FALCON_CANID, 
+        Drive.Motors.BACK_RIGHT_STEER_FALCON_CANID, 
+        Drive.Encoders.BACK_RIGHT_STEER_ENCODER_CANID,
+        Drive.Stats.BACK_RIGHT_MODULE_OFFSET_DEGREES
+        );
 
 
-    m_navX = new AHRS();
+        mNavX = new AHRS();
 
 
-    m_modulePositions = new SwerveModulePosition[]{ 
-      // https://github.com/SwerveDriveSpecialties/Do-not-use-swerve-lib-2022-unmaintained/blob/develop/examples/mk3-testchassis/src/main/java/com/swervedrivespecialties/examples/mk3testchassis/subsystems/DrivetrainSubsystem.java
-      new SwerveModulePosition(m_frontLeftModule.getVelocityMetersPerSecond(), m_frontLeftModule.getSteerAngle()), 
-      new SwerveModulePosition(m_frontRightModule.getVelocityMetersPerSecond(), m_frontRightModule.getSteerAngle()),
-      new SwerveModulePosition(m_backLeftModule.getVelocityMetersPerSecond(), m_backLeftModule.getSteerAngle()), 
-      new SwerveModulePosition(m_backRightModule.getVelocityMetersPerSecond(), m_backRightModule.getSteerAngle())
-    };
-       
-    //TODO use swerve position estimator https://docs.wpilib.org/en/latest/docs/software/advanced-controls/state-space/state-space-pose-estimators.html
+        mModulePositions = new SwerveModulePosition[]{ 
+            // https://github.com/SwerveDriveSpecialties/Do-not-use-swerve-lib-2022-unmaintained/blob/develop/examples/mk3-testchassis/src/main/java/com/swervedrivespecialties/examples/mk3testchassis/subsystems/DrivetrainSubsystem.java
+            new SwerveModulePosition(mFrontLeftModule.getVelocityMetersPerSecond(), mFrontLeftModule.getSteerAngle()), 
+            new SwerveModulePosition(mFrontRightModule.getVelocityMetersPerSecond(), mFrontRightModule.getSteerAngle()),
+            new SwerveModulePosition(mBackLeftModule.getVelocityMetersPerSecond(), mBackLeftModule.getSteerAngle()), 
+            new SwerveModulePosition(mBackRightModule.getVelocityMetersPerSecond(), mBackRightModule.getSteerAngle())
+        };
+        
+        //TODO use swerve position estimator https://docs.wpilib.org/en/latest/docs/software/advanced-controls/state-space/state-space-pose-estimators.html
 
 
-    m_odometry = new SwerveDriveOdometry(Drive.Stats.kinematics, Rotation2d.fromDegrees((double)m_navX.getFusedHeading()), m_modulePositions); 
-  
-    m_swerveSpeeds = new ChassisSpeeds(0, 0, 0);
+        mOdometry = new SwerveDriveOdometry(Drive.Stats.KINEMATICS, Rotation2d.fromDegrees((double)mNavX.getFusedHeading()), mModulePositions); 
 
-    m_currentPose = m_odometry.getPoseMeters(); // TODO needs to take the position from vision 
-    setAllModulesToZero();
-  }
-/**
- * Sets the state of all of the swerve modules
- * @param moduleState
- * WPILib's SwerveModuleState library
- */
-  public void setModulesStates(SwerveModuleState[] moduleState) {
-    m_frontLeftModule.setModuleState(moduleState[0]);
-    m_frontRightModule.setModuleState(moduleState[1]);
-    m_backLeftModule.setModuleState(moduleState[2]);
-    m_backRightModule.setModuleState(moduleState[3]);
-  }
+        mSwerveSpeeds = new ChassisSpeeds(0, 0, 0);
 
-  /**
-   * Sets the Speed / Angle / Stats of all of the modules
-   * @param xVelocityMps
-   * The X velocity (Meters Per Second)
-   * @param yVelocityMps
-   * The Y velocity (Meters Per Second)
-   * @param rotationVelocityRps
-   * Rotation velocity (Radians Per Second)
-   */
-  public void setModules(double xVelocityMps, double yVelocityMps, double rotationVelocityRps) {
-    // xVelocityMps=0;
-    // yVelocityMps*=-1.0;
-    // rotationVelocityRps = 0;
-    this.m_swerveSpeeds = new ChassisSpeeds(-xVelocityMps, -yVelocityMps, -rotationVelocityRps);
-    SwerveModuleState[] target_states = Drive.Stats.kinematics.toSwerveModuleStates(this.m_swerveSpeeds);
-    setModulesStates(target_states);
-  }
+        mCurrentPose = mOdometry.getPoseMeters(); // TODO needs to take the position from vision 
+        mSwerveModulesTab = Shuffleboard.getTab("Swerve Modules");
 
-  public void resetOdometry() {
-      m_odometry.resetPosition(m_navX.getRotation2d(), m_modulePositions, m_currentPose);
-  }
+        setAllModulesToZero();
+    }
+    /**
+     * Sets the state of all of the swerve modules
+     * @param moduleState
+     * WPILib's SwerveModuleState library
+     */
+    public void setModulesStates(SwerveModuleState[] moduleState) {
+        mFrontLeftModule.setModuleState(moduleState[0]);
+        mFrontRightModule.setModuleState(moduleState[1]);
+        mBackLeftModule.setModuleState(moduleState[2]);
+        mBackRightModule.setModuleState(moduleState[3]);
+    }
 
-  public void setAllModulesToZero() {
-    SwerveModuleState[] zeroStates = new SwerveModuleState[4];
+    /**
+     * Sets the Speed / Angle / Stats of all of the modules
+     * @param xVelocityMps
+     * The X velocity (Meters Per Second)
+     * @param yVelocityMps
+     * The Y velocity (Meters Per Second)
+     * @param rotationVelocityRps
+     * Rotation velocity (Radians Per Second)
+     */
+    public void setModules(double xVelocityMps, double yVelocityMps, double rotationVelocityRps) {
+        // xVelocityMps=0;
+        // yVelocityMps*=-1.0;
+        // rotationVelocityRps = 0;
+        this.mSwerveSpeeds = new ChassisSpeeds(-xVelocityMps, -yVelocityMps, -rotationVelocityRps);
+        SwerveModuleState[] targetStates = Drive.Stats.KINEMATICS.toSwerveModuleStates(this.mSwerveSpeeds);
+        setModulesStates(targetStates);
+    }
 
-    zeroStates[0] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.kFrontLeftModuleOffsetInDegrees));
-    zeroStates[1] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.kFrontRightModuleOffsetInDegrees));
-    zeroStates[2] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.kBackLeftModuleOffsetInDegrees));
-    zeroStates[3] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.kBackRightModuleOffsetInDegrees));
+    public void resetOdometry() {
+        mOdometry.resetPosition(mNavX.getRotation2d(), mModulePositions, mCurrentPose);
+    }
 
-    setModulesStates(zeroStates);
-}
+    public void setAllModulesToZero() {
+        SwerveModuleState[] zeroStates = new SwerveModuleState[4];
 
-  /**
-   * gets the angle of the navx 
-   */
-  public Rotation2d getGyroAngleInRotation2d() {
-    return Rotation2d.fromDegrees((double)m_navX.getFusedHeading());
-  }
+        zeroStates[0] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.FRONT_LEFT_MODULE_OFFSET_DEGREES));
+        zeroStates[1] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.FRONT_RIGHT_MODULE_OFFSET_DEGREES));
+        zeroStates[2] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.BACK_LEFT_MODULE_OFFSET_DEGREES));
+        zeroStates[3] = new SwerveModuleState(0, Rotation2d.fromDegrees(-Drive.Stats.BACK_RIGHT_MODULE_OFFSET_DEGREES));
 
+        setModulesStates(zeroStates);
+    }
 
-
-  @Override
-  public void periodic()
-   {
-    // module function that returns the position
-    m_odometry.update(getGyroAngleInRotation2d(), new SwerveModulePosition[]{ 
-      new SwerveModulePosition(m_frontLeftModule.getVelocityMetersPerSecond(), m_frontLeftModule.getSteerAngle()), 
-      new SwerveModulePosition(m_frontRightModule.getVelocityMetersPerSecond(), m_frontRightModule.getSteerAngle()),
-      new SwerveModulePosition(m_backLeftModule.getVelocityMetersPerSecond(), m_backLeftModule.getSteerAngle()), 
-      new SwerveModulePosition(m_backRightModule.getVelocityMetersPerSecond(), m_backRightModule.getSteerAngle())
-    });
-    SwerveModuleState[] states = Drive.Stats.kinematics.toSwerveModuleStates(m_swerveSpeeds);
-    setModulesStates(states);
-
-  }
+    /**
+     * gets the angle of the navx 
+     */
+    public Rotation2d getGyroAngleInRotation2d() {
+        return Rotation2d.fromDegrees((double)mNavX.getFusedHeading());
+    }
 
 
-// https://www.youtube.com/watch?v=mmNJjKJG8mw&ab_channel=LittletonRobotics
-  @Override
-  public void simulationPeriodic() {
-    // This method will be called once per scheduler run during simulation
-  }
+
+    public void addValuesForModule(SwerveModule module, String name) {
+        mSwerveModulesTab.add(name + " Drive Velocity (Meters Per Second):", module.getVelocityMetersPerSecond());
+        mSwerveModulesTab.add(name + " Steer Position (Degrees):", module.getSteerAngle().getDegrees());
+        mSwerveModulesTab.add(name + " Steer Position (Rotations):", module.getSteerAngle().getRotations());
+        mSwerveModulesTab.add(name + " Encoder Absolute Position (Rotations):", module.getSteerEncoder().getAbsolutePosition());
+    }
+
+    @Override
+    public void periodic()
+    {
+        // module function that returns the position
+        mOdometry.update(getGyroAngleInRotation2d(), new SwerveModulePosition[]{ 
+        new SwerveModulePosition(mFrontLeftModule.getVelocityMetersPerSecond(), mFrontLeftModule.getSteerAngle()), 
+        new SwerveModulePosition(mFrontRightModule.getVelocityMetersPerSecond(), mFrontRightModule.getSteerAngle()),
+        new SwerveModulePosition(mBackLeftModule.getVelocityMetersPerSecond(), mBackLeftModule.getSteerAngle()), 
+        new SwerveModulePosition(mBackRightModule.getVelocityMetersPerSecond(), mBackRightModule.getSteerAngle())
+        });
+        SwerveModuleState[] states = Drive.Stats.KINEMATICS.toSwerveModuleStates(mSwerveSpeeds);
+        setModulesStates(states);
+        addValuesForModule(mFrontLeftModule, "Front Left Module");
+        addValuesForModule(mFrontRightModule, "Front Right Module");
+        addValuesForModule(mBackLeftModule, "Back Left Module");
+        addValuesForModule(mBackRightModule, "Back Right Module");
+
+    }
+
+
+    // https://www.youtube.com/watch?v=mmNJjKJG8mw&ab_channel=LittletonRobotics
+    @Override
+    public void simulationPeriodic() {
+        // This method will be called once per scheduler run during simulation
+    }
 }
