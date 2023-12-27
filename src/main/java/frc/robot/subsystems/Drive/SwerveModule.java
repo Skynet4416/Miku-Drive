@@ -31,6 +31,10 @@ public class SwerveModule extends SubsystemBase {
     private final CANcoder m_steerEncoder;
     private final VelocityVoltage m_voltageVelocity;
     private final PositionVoltage m_voltagePosition;
+    //the log of the speed of the module
+    private ShuffleboardTab moduleSpeed;
+    //the log of what is the angle the swerve is positioned at
+    private ShuffleboardTab moduleAngle; 
 
 
     private SwerveModuleState m_moduleState; // current state of the module without steer offset
@@ -55,6 +59,8 @@ public class SwerveModule extends SubsystemBase {
         this.m_voltagePosition = new PositionVoltage(0);
         this.m_moduleState = new SwerveModuleState(0, Rotation2d.fromDegrees(0));
         this.m_moduleOffset = moduleOffsetInDegrees;
+        moduleSpeed = Shuffleboard.getTab("module speed");
+        moduleAngle = Shuffleboard.getTab("module angle");
         configMotors(steerEncoderCANID);
         setNeutralMode(NeutralModeValue.Brake);
     }
@@ -237,7 +243,9 @@ public class SwerveModule extends SubsystemBase {
     @Override
     public void periodic() { // todo logs needed - ShuffleBoard
         this.m_moduleState.angle = Rotation2d.fromDegrees(this.m_steerEncoder.getAbsolutePosition().getValueAsDouble() / 360);
+        Shuffleboard.getTab("module angle").add("module angle for motor: "+m_driveMotor.getDeviceID(),this.m_moduleState.angle);
         this.m_moduleState.speedMetersPerSecond = rpmToMps(this.m_driveMotor.getRotorVelocity().getValueAsDouble() * 60);
+        Shuffleboard.getTab("module speed").add("module speed for motor: "+m_driveMotor.getDeviceID(),this.m_moduleState.speedMetersPerSecond);
     }
 
     @Override
