@@ -10,20 +10,20 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
 public class DriveCommand extends Command {
-    private final DriveSubsystem m_driveSubsystem;
-    private final DoubleSupplier m_xDoubleSupplier;
-    private final DoubleSupplier m_yDoubleSupplier;
-    private final DoubleSupplier m_rotationDoubleSupplier;
+    private final DriveSubsystem mDriveSubsystem;
+    private final DoubleSupplier mXDoubleSupplier;
+    private final DoubleSupplier mYDoubleSupplier;
+    private final DoubleSupplier mRotationDoubleSupplier;
     /**
      * Creates a new ExampleCommand.
      *
      * @param subsystem The subsystem used by this command.
      */
     public DriveCommand(DriveSubsystem driveSubsystem, DoubleSupplier xValue, DoubleSupplier yValue, DoubleSupplier rotationValue) {
-        this.m_driveSubsystem = driveSubsystem;
-        this.m_xDoubleSupplier = xValue;
-        this.m_yDoubleSupplier = yValue;
-        this.m_rotationDoubleSupplier = rotationValue;
+        this.mDriveSubsystem = driveSubsystem;
+        this.mXDoubleSupplier = xValue;
+        this.mYDoubleSupplier = yValue;
+        this.mRotationDoubleSupplier = rotationValue;
 
         addRequirements(driveSubsystem);
     }
@@ -41,24 +41,19 @@ public class DriveCommand extends Command {
     @Override
     public void execute() 
     {
-        m_driveSubsystem.setModules(
-        correctJoystickDrift(m_yDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_VELOCITY_METERS_PER_SECOND,
-        correctJoystickDrift(m_xDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_VELOCITY_METERS_PER_SECOND, 
-        correctJoystickDrift(m_rotationDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND
+        mDriveSubsystem.setModules(
+        correctJoystickDrift(mYDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_VELOCITY_METERS_PER_SECOND,
+        correctJoystickDrift(mXDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_VELOCITY_METERS_PER_SECOND, 
+        correctJoystickDrift(mRotationDoubleSupplier.getAsDouble()) * Drive.Stats.MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND
         );
 
-        // ! DEBUG
-        // TODO CONVERT TO SHUFFLEBOARD
-        // System.out.println("x: " + correctJoystickDrift(m_xDoubleSupplier.getAsDouble()) * Drive.Stats.kMaxVelocityMetersPerSecond); 
-        // System.out.println("y: " + correctJoystickDrift(m_yDoubleSupplier.getAsDouble()) * Drive.Stats.kMaxVelocityMetersPerSecond);
-        // System.out.println("rotation: " + correctJoystickDrift(m_rotationDoubleSupplier.getAsDouble()) * Drive.Stats.kMaxAngularVelocityRadiansPerSecond);
     }
 
 
 
     @Override
     public void end(boolean interrupted) {
-        m_driveSubsystem.setModules(0, 0, 0);
+        mDriveSubsystem.setModules(0, 0, 0);
     }
 
     // Returns true when the command should end.
