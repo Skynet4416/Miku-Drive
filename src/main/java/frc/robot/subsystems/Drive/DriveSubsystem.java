@@ -11,6 +11,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -25,6 +26,7 @@ public class DriveSubsystem extends SubsystemBase {
     private final SwerveModule mBackLeftModule;
     private final SwerveModule mBackRightModule;
     private final ShuffleboardTab mSwerveModulesTab;
+    private final ShuffleboardTab mDriveTab;
     private final AHRS mNavX;
     private final SwerveModulePosition[] mModulePositions;
     private final SwerveDriveOdometry mOdometry;
@@ -61,10 +63,10 @@ public class DriveSubsystem extends SubsystemBase {
         );
 
 
-        mNavX = new AHRS();
+        this.mNavX = new AHRS();
 
 
-        mModulePositions = new SwerveModulePosition[]{ 
+        this.mModulePositions = new SwerveModulePosition[]{ 
             // https://github.com/SwerveDriveSpecialties/Do-not-use-swerve-lib-2022-unmaintained/blob/develop/examples/mk3-testchassis/src/main/java/com/swervedrivespecialties/examples/mk3testchassis/subsystems/DrivetrainSubsystem.java
             new SwerveModulePosition(mFrontLeftModule.getVelocityMetersPerSecond(), mFrontLeftModule.getSteerAngle()), 
             new SwerveModulePosition(mFrontRightModule.getVelocityMetersPerSecond(), mFrontRightModule.getSteerAngle()),
@@ -75,13 +77,13 @@ public class DriveSubsystem extends SubsystemBase {
         //TODO use swerve position estimator https://docs.wpilib.org/en/latest/docs/software/advanced-controls/state-space/state-space-pose-estimators.html
 
 
-        mOdometry = new SwerveDriveOdometry(Drive.Stats.KINEMATICS, Rotation2d.fromDegrees((double)mNavX.getFusedHeading()), mModulePositions); 
+        this.mOdometry = new SwerveDriveOdometry(Drive.Stats.KINEMATICS, Rotation2d.fromDegrees((double)mNavX.getFusedHeading()), mModulePositions); 
 
-        mSwerveSpeeds = new ChassisSpeeds(0, 0, 0);
+        this.mSwerveSpeeds = new ChassisSpeeds(0, 0, 0);
 
-        mCurrentPose = mOdometry.getPoseMeters(); // TODO needs to take the position from vision 
-        mSwerveModulesTab = Shuffleboard.getTab("Swerve Modules");
-
+        this.mCurrentPose = mOdometry.getPoseMeters(); // TODO needs to take the position from vision 
+        this.mSwerveModulesTab = Shuffleboard.getTab("Swerve Modules");
+        this.mDriveTab = Shuffleboard.getTab("Drive");
         setAllModulesToZero();
     }
     /**
@@ -96,6 +98,18 @@ public class DriveSubsystem extends SubsystemBase {
         mBackRightModule.setModuleState(moduleState[3]);
     }
 
+    public double getXVelocityFieldOriented(double targetVelocityX, double targetVelocityY) {
+        double offsetAngle = getGyroAngleInRotation2d().getDegrees() - Drive.Stats.FIELD_HEADING_OFFSET;
+        return targetVelocityX * Math.cos(Units.degreesToRadians(offsetAngle)) - targetVelocityY * Math.sin(Units.degreesToRadians(offsetAngle));
+    }
+
+    public double getYVelocityFieldOriented(double targetVelocityX, double targetVelocityY) {
+        double offsetAngle = getGyroAngleInRotation2d().getDegrees() - Drive.Stats.FIELD_HEADING_OFFSET;
+        return targetVelocityX * Math.sin(Units.degreesToRadians(offsetAngle)) + targetVelocityY * Math.cos(Units.degreesToRadians(offsetAngle));
+    }
+
+
+
     /**
      * Sets the Speed / Angle / Stats of all of the modules
      * @param xVelocityMps
@@ -106,10 +120,11 @@ public class DriveSubsystem extends SubsystemBase {
      * Rotation velocity (Radians Per Second)
      */
     public void setModules(double xVelocityMps, double yVelocityMps, double rotationVelocityRps) {
-        // xVelocityMps=0;
-        // yVelocityMps*=-1.0;
-        // rotationVelocityRps = 0;
-        this.mSwerveSpeeds = new ChassisSpeeds(-xVelocityMps, -yVelocityMps, -rotationVelocityRps);
+        this.mSwerveSpeeds = new ChassisSpeeds(
+            -getXVelocityFieldOriented(xVelocityMps, yVelocityMps), 
+            -getYVelocityFieldOriented(xVelocityMps, yVelocityMps), 
+            -rotationVelocityRps
+        );
         SwerveModuleState[] targetStates = Drive.Stats.KINEMATICS.toSwerveModuleStates(this.mSwerveSpeeds);
         setModulesStates(targetStates);
     }
@@ -139,10 +154,10 @@ public class DriveSubsystem extends SubsystemBase {
 
 
     public void addValuesForModule(SwerveModule module, String name) {
-        mSwerveModulesTab.add(name + " Drive Velocity (Meters Per Second):", module.getVelocityMetersPerSecond());
-        mSwerveModulesTab.add(name + " Steer Position (Degrees):", module.getSteerAngle().getDegrees());
-        mSwerveModulesTab.add(name + " Steer Position (Rotations):", module.getSteerAngle().getRotations());
-        mSwerveModulesTab.add(name + " Encoder Absolute Position (Rotations):", module.getSteerEncoder().getAbsolutePosition());
+        mSwerveModulesTab.addDouble(name + " Drive Velocity (Meters Per Second):", (() -> module.getVelocityMetersPerSecond()));
+        mSwerveModulesTab.addDouble(name + " Steer Position (Degrees):", (() -> module.getSteerAngle().getDegrees()));
+        mSwerveModulesTab.addDouble(name + " Steer Position (Rotations):", (() -> module.getSteerAngle().getRotations()));
+        mSwerveModulesTab.addDouble(name + " Encoder Absolute Position (Rotations):", (() -> module.getSteerEncoder().getAbsolutePosition().getValue()));
     }
 
     @Override
@@ -161,7 +176,7 @@ public class DriveSubsystem extends SubsystemBase {
         addValuesForModule(mFrontRightModule, "Front Right Module");
         addValuesForModule(mBackLeftModule, "Back Left Module");
         addValuesForModule(mBackRightModule, "Back Right Module");
-
+        mDriveTab.addDouble("NavX Angle (Degrees)", (() -> getGyroAngleInRotation2d().getDegrees()));
     }
 
 

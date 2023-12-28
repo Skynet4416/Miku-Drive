@@ -1,12 +1,15 @@
 package frc.robot.subsystems.Drive;
 
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -90,7 +93,12 @@ public class SwerveModule extends SubsystemBase {
             .withKI(Swerve.PID.Steer.I) // Integral tuning - learning
             .withKD(Swerve.PID.Steer.D); // Derivative tuning - overshoot
         
-
+        MagnetSensorConfigs sensorConfigs = new MagnetSensorConfigs()
+            .withAbsoluteSensorRange(AbsoluteSensorRangeValue.Unsigned_0To1);
+        
+        ClosedLoopGeneralConfigs closedLoopConfigs = new ClosedLoopGeneralConfigs();
+        closedLoopConfigs.ContinuousWrap = true;
+            
 
         this.mDriveMotor.getConfigurator().apply(voltageConfigs);
         this.mDriveMotor.getConfigurator().apply(statorConfigs);
@@ -101,6 +109,9 @@ public class SwerveModule extends SubsystemBase {
         this.mSteerMotor.getConfigurator().apply(statorConfigs);
         this.mSteerMotor.getConfigurator().apply(feedbackConfigs);
         this.mSteerMotor.getConfigurator().apply(slot0SteerConfigs);
+        this.mSteerMotor.getConfigurator().apply(closedLoopConfigs);
+
+        this.mSteerEncoder.getConfigurator().apply(sensorConfigs);
         
 
         
@@ -112,23 +123,25 @@ public class SwerveModule extends SubsystemBase {
      */
     public void setModuleState(SwerveModuleState state){
         //state = SwerveModuleState.optimize(state, this.mModuleState.angle); // CURRENTLY BREAKS THINGS
-        this.mDriveMotor.setControl(this.mVoltageVelocity.withVelocity(mpsToRps(state.speedMetersPerSecond)));
-        this.mSteerMotor.setControl(this.mVoltagePosition.withPosition(calculateCorrectPositionInRotations(state.angle.getDegrees())));
+        setModuleVelocity(state.speedMetersPerSecond);
+        setModuleAngle(state.angle.getDegrees());
+        this.mModuleState = state;
     }
 
     /**
-     * Calculates the shortest path to a degree
-     * @param degrees
-     * Double of the wanted degrees
-     * @return
-     * The position that the steer motor needs to be in
+     * @param targetVelocity
+     * The target velocity in meters per second
      */
-    public double calculateCorrectPositionInRotations(double degrees) {
-        degrees = degrees + this.mModuleOffset;
-        degrees = 
-            (Math.abs(degrees - getSteerAngle().getDegrees()) > Math.abs(Math.abs(360 - degrees) - getSteerAngle().getDegrees())) ? 360 + degrees 
-            : degrees;
-        return degrees/360;
+    public void setModuleVelocity(double targetVelocity){
+        this.mDriveMotor.setControl(mVoltageVelocity.withVelocity(mpsToRps(targetVelocity)));
+    }
+
+    /**
+     * @param targetDegrees
+     * The target angle in degrees of the module
+     */
+    public void setModuleAngle(double targetDegrees){
+        this.mSteerMotor.setControl(this.mVoltagePosition.withPosition((this.mModuleOffset + targetDegrees)/360));
     }
 
     /**
