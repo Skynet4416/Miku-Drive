@@ -5,6 +5,7 @@ import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -32,7 +33,13 @@ public class SwerveModule extends SubsystemBase {
     private final PositionVoltage mVoltagePosition;
 
 
-    private SwerveModuleState mModuleState; // current state of the module without steer offset
+    /**
+     * Module State without steer offset
+     */
+    private SwerveModuleState mModuleState; 
+    /**
+     * The Starting degree of the steer mechanism
+     */
     private double mModuleOffset;
 
 
@@ -44,7 +51,7 @@ public class SwerveModule extends SubsystemBase {
      * @param steerEncoderCANID
      * CANID of the Steer Encoder (on-axis)
      * @param moduleOffsetDegrees
-     * The Offset of the module (Relative to the robot)
+     * The Starting degree of the steer mechanism
      */
     public SwerveModule(int driveMotorCANID, int steerMotorCANID, int steerEncoderCANID, double moduleOffsetDegrees) {
         this.mDriveMotor = new TalonFX(driveMotorCANID);
@@ -98,18 +105,21 @@ public class SwerveModule extends SubsystemBase {
         
         ClosedLoopGeneralConfigs closedLoopConfigs = new ClosedLoopGeneralConfigs();
         closedLoopConfigs.ContinuousWrap = true;
+
+        mDriveMotor.getConfigurator().apply(new TalonFXConfiguration());
+        mSteerMotor.getConfigurator().apply(new TalonFXConfiguration());
             
 
         this.mDriveMotor.getConfigurator().apply(voltageConfigs);
         this.mDriveMotor.getConfigurator().apply(statorConfigs);
         this.mDriveMotor.getConfigurator().apply(slot0DriveConfigs);
         
-        
         this.mSteerMotor.getConfigurator().apply(voltageConfigs);
         this.mSteerMotor.getConfigurator().apply(statorConfigs);
         this.mSteerMotor.getConfigurator().apply(feedbackConfigs);
         this.mSteerMotor.getConfigurator().apply(slot0SteerConfigs);
         this.mSteerMotor.getConfigurator().apply(closedLoopConfigs);
+        this.mSteerMotor.setInverted(true);
 
         this.mSteerEncoder.getConfigurator().apply(sensorConfigs);
         
@@ -235,7 +245,7 @@ public class SwerveModule extends SubsystemBase {
     }
 
     @Override
-    public void periodic() { // todo logs needed - ShuffleBoard
+    public void periodic() {
         this.mModuleState.angle = Rotation2d.fromDegrees(this.mSteerEncoder.getAbsolutePosition().getValueAsDouble() / 360);
         this.mModuleState.speedMetersPerSecond = rpmToMps(this.mDriveMotor.getRotorVelocity().getValueAsDouble() * 60);
     }

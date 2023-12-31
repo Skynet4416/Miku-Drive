@@ -67,7 +67,7 @@ public final class Constants {
                 /**
                  * Proportional tuning - error
                  */
-                public static final double P = -10.5;
+                public static final double P = 10.5;
                 /**
                  * Integral tuning - learning
                  */
@@ -134,6 +134,14 @@ public final class Constants {
              */
             public static final double BACK_RIGHT_MODULE_OFFSET_DEGREES = 166;
 
+           
+
+            // public static final double MAX_VELOCITY_METERS_PER_SECOND = 4.17576;
+            // ?  actual max speed ^ might want to make a bit lower for absolute no issues, this "Free speed" is without any obstacles.
+            /**
+             * Half of the free speed because of sensitivity, can go faster: 
+             * @see <a href="https://www.swervedrivespecialties.com/products/mk4i-swerve-module">MK4I Stats (Free Speed)</a>
+             */
             public static final double MAX_VELOCITY_METERS_PER_SECOND = 2.39268;
             public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND = MAX_VELOCITY_METERS_PER_SECOND /
             Math.hypot(TRACK_WIDTH_METERS / 2.0, WHEELBASE_METERS / 2.0);
